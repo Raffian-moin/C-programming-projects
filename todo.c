@@ -1,6 +1,7 @@
 #include<stdio.h>
 #include<string.h>
 #include<stdlib.h>
+#include<time.h>
 #define TASK_NAME_MAX_LENGTH 100
 
 typedef enum {
@@ -13,6 +14,7 @@ typedef struct Task {
     char name[TASK_NAME_MAX_LENGTH];
     int priority;
     TaskStatus status;
+    time_t created_at;
 } taskStruct;
 
 void showMenu(void);
@@ -61,10 +63,13 @@ int main() {
                 break;
             case 4:
                 deleteTask(task, &index);
+				break;
             case 5:
                 filterTask(task, index);
+				break;
             case 6:
                 saveToFile(task, index);
+				break;
         }
 
     } while (option != 7); 
@@ -78,9 +83,13 @@ void displayTasks(taskStruct *task, int index) {
 	}
 
     for (int i = 0; i < index; i++) {
-        char *status;
-        status = getStatusString(task[i].status);
-        printf("%s [%s]\n", (task + i)->name, status);
+        char *status = getStatusString(task[i].status);
+
+		struct tm *time = localtime(&task[i].created_at);
+		char formattedTime[100];
+		strftime(formattedTime, sizeof(formattedTime), "%d-%m-%y %r", time);
+
+        printf("%s [%s] %s\n", task[i].name, status, formattedTime);
     }
 }
 
@@ -100,6 +109,9 @@ void addTask(taskStruct *task, int *index) {
     scanf(" %d", &priority);
 
     task[*index].priority = priority;
+    time_t created_at;
+    time(&created_at);
+    task[*index].created_at = created_at;
 
     (*index)++;
 
@@ -233,7 +245,7 @@ void filterByStatus(taskStruct *task, int index) {
 	scanf("%d", &selectedOption);
 
     for (int i = 0; i < index; i++) {
-        if (task[i].status == selectedOption) {
+        if ((int)task[i].status == selectedOption) {
             char *statusString = getStatusString(task[i].status);
             printf("%s [%s]\n", task[i].name, statusString);
         }
@@ -262,7 +274,7 @@ void saveToFile(taskStruct *task, int index) {
     FILE *file_ptr = fopen("task.txt", "w");
     
     for (int i = 0; i < index; i++) {
-        fprintf(file_ptr, "%s;%d;%d\n", task[i].name, task[i].priority, task[i].status);
+        fprintf(file_ptr, "%s;%d;%d;%ld\n", task[i].name, task[i].priority, task[i].status, task[i].created_at);
     }
 
     fclose(file_ptr);
@@ -291,6 +303,12 @@ void loadDataFromFile(taskStruct **task, int *index, int *capacity) {
 		taskData = strtok(NULL, ";");
         if (taskData != NULL) {
 			(*task)[*index].status = atoi(taskData);
+		}
+
+        taskData = strtok(NULL, ";");
+        if (taskData != NULL) {
+            time_t created_at = strtoll(taskData, NULL, 10);
+			(*task)[*index].created_at = created_at;
 		}
 
         (*index)++;
