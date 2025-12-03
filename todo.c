@@ -26,6 +26,9 @@ void filterTask(taskStruct *task, int index);
 int comparePriority(const void *a, const void *b);
 void filterByPriority(taskStruct *task, int index);
 void filterByStatus(taskStruct *task, int index);
+void filterByCreationTime(taskStruct *task, int index); 
+int timeDifference(const void *a, const void *b);
+void filterByPriority(taskStruct *task, int index);
 char *getStatusString(int status);
 void saveToFile(taskStruct *task, int index);
 void loadDataFromFile(taskStruct **task, int *index, int *capacity);
@@ -209,6 +212,7 @@ void filterTask(taskStruct *task, int index) {
             filterByPriority(task, index);
             break;
 		case 2:
+			filterByCreationTime(task, index);
             break;
         case 3:
 			filterByStatus(task, index);
@@ -250,6 +254,20 @@ void filterByStatus(taskStruct *task, int index) {
             printf("%s [%s]\n", task[i].name, statusString);
         }
     }
+}
+
+void filterByCreationTime(taskStruct *task, int index) {
+	taskStruct *tasksToBeFiltered = task;
+    qsort(tasksToBeFiltered, index, sizeof(taskStruct), timeDifference);
+	
+	displayTasks(tasksToBeFiltered, index);
+}
+
+int timeDifference(const void *a, const void *b) {
+	taskStruct task_a = *((taskStruct *)a);
+	taskStruct task_b = *((taskStruct *)b);
+
+	return task_b.created_at - task_a.created_at;
 }
 
 char *getStatusString(int status) {
