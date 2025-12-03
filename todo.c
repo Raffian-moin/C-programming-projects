@@ -25,11 +25,16 @@ int comparePriority(const void *a, const void *b);
 void filterByPriority(taskStruct *task, int index);
 void filterByStatus(taskStruct *task, int index);
 char *getStatusString(int status);
+void saveToFile(taskStruct *task, int index);
+void loadDataFromFile(taskStruct **task, int *index, int *capacity);
 
 int main() {
-    taskStruct *task = malloc(sizeof(taskStruct) * 10);
+    int capacity = 5;
     int index = 0;
     int option = 0;
+    taskStruct *task = malloc(sizeof(taskStruct) * capacity);
+
+    loadDataFromFile(&task, &index, &capacity);
 
     do {
         printf("=========== Main Menu ==============\n");
@@ -58,6 +63,8 @@ int main() {
                 deleteTask(task, &index);
             case 5:
                 filterTask(task, index);
+            case 6:
+                saveToFile(task, index);
         }
 
     } while (option != 7); 
@@ -248,4 +255,47 @@ char *getStatusString(int status) {
     }
 
     return statusString;
+}
+
+
+void saveToFile(taskStruct *task, int index) {
+    FILE *file_ptr = fopen("task.txt", "w");
+    
+    for (int i = 0; i < index; i++) {
+        fprintf(file_ptr, "%s;%d;%d\n", task[i].name, task[i].priority, task[i].status);
+    }
+
+    fclose(file_ptr);
+}
+
+
+void loadDataFromFile(taskStruct **task, int *index, int *capacity) {
+    FILE *file_ptr = fopen("task.txt", "a+");
+    
+    char currentTaskData[100];
+    while(fgets(currentTaskData, sizeof(currentTaskData), file_ptr)) {
+        if (*index == *capacity) {
+            *capacity = *capacity + 5;
+            taskStruct *newly_allocated_task_ptr = realloc(*task, sizeof(taskStruct) * (*capacity));
+            *task = newly_allocated_task_ptr;
+        }
+
+        char *taskData = strtok(currentTaskData, ";");
+        strcpy((*task)[*index].name, taskData);
+
+		taskData = strtok(NULL, ";");
+		if (taskData!= NULL) {
+			(*task)[*index].priority = atoi(taskData);
+		}
+
+		taskData = strtok(NULL, ";");
+        if (taskData != NULL) {
+			(*task)[*index].status = atoi(taskData);
+		}
+
+        (*index)++;
+    }
+
+    fclose(file_ptr);
+
 }
